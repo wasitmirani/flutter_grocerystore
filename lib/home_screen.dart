@@ -4,6 +4,8 @@ import './custom_widget/marginBox.dart';
 import './model/categories_screen.dart';
 import './model/data.dart';
 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -12,7 +14,21 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int currentIndex = 0;
   PageController _pageController;
+ final String apiUrl = "https://marton.pk/api/all/categories";
 
+  Future<List<dynamic>> fetchcategory() async {
+
+    var result = await http.get(apiUrl);
+ 
+    return json.decode(result.body);
+
+  }
+
+  String _name(dynamic user){
+
+    return user['name'];
+    // ['title'] + " " + user['name']['first'] + " " +  user['name']['last']
+  }
   @override
   void initState() {
     super.initState();
@@ -283,9 +299,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget buildListCategories(double height, double width, double szText) {
     return Container(
       height: height * 0.16,
-      child: ListView.builder(
+      child:  FutureBuilder<List<dynamic>>(
+  future: fetchcategory(),
+  builder: (BuildContext context, AsyncSnapshot snapshot) {
+    print(snapshot.data);
+    if(snapshot.hasData){
+      return ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
+        itemCount: snapshot.data.length,
         itemBuilder: (BuildContext context, index) {
           return Container(
             margin: EdgeInsets.only(right: 16),
@@ -304,10 +325,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Tab(
                         icon: Container(
                           child: Image(
-                            image: AssetImage(
-                              categories[index].imgCategory,
-                            ),
-                            fit: BoxFit.fill,
+                            image: NetworkImage(snapshot.data[index]['thumbnail'].toString()),
+                            fit: BoxFit.fitWidth,
                           ),
                           // height: width * 0.08,
                           // width: width * 0.08,
@@ -321,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   multi: 1,
                 ),
                 Text(
-                  categories[index].nameCategory,
+                 _name(snapshot.data[index]),
                   style: TextStyle(
                       fontWeight: FontWeight.w400, fontSize: 14 * szText),
                 ),
@@ -329,7 +348,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         },
-      ),
+      );
+    }
+     },
+    ),
     );
   }
 
